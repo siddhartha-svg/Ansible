@@ -1,0 +1,32 @@
+---
+- hosts: all
+  gather_facts: true
+  become: true
+  become_method: pbrun
+  become_user: root
+  tasks:
+    - name: Remove nodejs in destination server
+      shell: |
+        export http_proxy=http://proxy.ebiz.horizon.com:80
+        export https_proxy=http://proxy.ebiz.horizon.com:80
+        export NO_PROXY=169.254.169.254
+        yum remove nodejs -y
+        
+    - name: Install latest nodejs version in destination servers
+      args:
+        chdir: /usr/local/lib/
+      shell: |
+       export http_proxy=http://proxy.ebiz.horizon.com:80
+       export https_proxy=http://proxy.ebiz.horizon.com:80
+       export NO_PROXY=169.254.169.254
+       curl -O https://nodejs.org/dist/{{ Version }}/node-{{ Version }}-linux-x64.tar.xz
+       tar -xvf node-{{ Version }}-linux-x64.tar.xz
+       sleep 5
+       mv /usr/local/lib/node-{{ Version }}-linux-x64/bin/node /usr/bin/
+    
+    - name: version check across servers
+      shell: |
+        node -v
+      register: bash_status
+    - debug:
+        var: bash_status.stdout_lines
