@@ -1,0 +1,11 @@
+---
+-
+  hosts: all
+  become: yes
+  become_method: pbrun
+  become_user: madmin
+  gather_facts: true
+  roles:
+    - { role: jitr_kafka_restart,
+        tags: collect_revision }
+...
