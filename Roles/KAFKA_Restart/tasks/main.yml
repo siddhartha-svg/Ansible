@@ -1,0 +1,72 @@
+---
+
+- name: Login madmin as user 
+  file:
+    path: /opt/app/KAFKA/kafka_2.12-3.1.1/bin/
+    owner: madmin
+    group: madmin
+    recurse: yes
+  ignore_errors: no
+
+
+- name: Kill Kafka processes on all 3 servers
+  shell: |
+    ps -ef | grep kafka_2.12-3.1.1 | awk '{print $2}' | xargs -r kill -9
+  ignore_errors: true
+
+
+- name: Check Zookeeper process
+  shell: ps -ef | grep zookeeper.prop
+  register: zookeeper_status
+- debug:
+    var: zookeeper_status.stdout_lines
+  
+
+- name: Check Kafka broker process
+  shell: ps -ef | grep server.prop
+  register: kafka_status
+
+
+###########################################DEBUG########################
+- name: Start Zookeeper
+  shell: >
+    export JAVA_HOME=/opt/app/JDK
+
+    nohup /opt/app/KAFKA/kafka_2.12-3.1.1/bin/zookeeper-server-start.sh \
+
+    /opt/app/KAFKA/kafka_2.12-3.1.1/config/zookeeper.properties > /tmp/zookeeper.out 2>&1 &
+  async: 30
+  poll: 0
+- name: Wait for Zookeeper port 2181 to be open
+  wait_for: 
+    port: 2181
+    timeout: 20
+  ignore_errors: yes
+
+
+- name: Start Kafka Broker
+  shell: >
+    export JAVA_HOME=/opt/app/JDK
+
+    nohup /opt/app/KAFKA/kafka_2.12-3.1.1/bin/kafka-server-start.sh \
+
+    /opt/app/KAFKA/kafka_2.12-3.1.1/config/server.properties > /tmp/kafka.out 2>&1 &
+  async: 30
+  poll: 0
+- name: Wait for Kafka port 9092 to be open
+  wait_for:
+    port: 9092
+    timeout: 20
+  ignore_errors: yes
+
+
+- name: Show kafka broker status   
+  debug: 
+    var: kafka_status.stdout_lines
+
+
+- name: Show  Zookeeper status   
+  debug: 
+    var: zookeeper_status.stdout_lines
+
+
